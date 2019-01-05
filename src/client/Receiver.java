@@ -1,29 +1,30 @@
-package sample;
+package client;
+
+import common.Config;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import javafx.application.Platform;
-import java.net.SocketTimeoutException;
 
 public class Receiver extends Thread {
-    MulticastSocket socket = null;
-    InetAddress mcastAddress;
 
-    Controller controller;
-    boolean runnning = true;
+    private Controller controller;
+    private boolean running = true;
 
-    public void exit(){
-        runnning = false;
+    void exit(){
+        running = false;
     }
 
-    public Receiver(Controller controller){
+    Receiver(Controller controller){
         this.controller = controller;
     }
 
     @Override
     public void run() {
+        MulticastSocket socket = null;
+        InetAddress mcastAddress;
         try {
             //マルチキャストソケットを作成
             socket = new MulticastSocket(Config.MCAST_PORT);
@@ -37,7 +38,7 @@ public class Receiver extends Thread {
         DatagramPacket receivePacket = new DatagramPacket(buf, buf.length);
 
 
-        while (runnning) {
+        while (running) {
             //受信
             try {
                 socket.setSoTimeout(1000); //1秒でいったん受信処理抜ける

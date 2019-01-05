@@ -1,7 +1,6 @@
-package sample;
+package client;
 
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -9,8 +8,7 @@ import javafx.stage.Stage;
 
 public class Main extends Application {
 
-    Controller controller;
-    Receiver receiver;
+    private Receiver receiver;
 
     @Override
     public void start(Stage primaryStage) throws Exception{
@@ -19,7 +17,7 @@ public class Main extends Application {
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("gameWindow.fxml"));
         Parent root = loader.load();
-        controller = loader.getController();
+        Controller controller = loader.getController();
         receiver = new Receiver(controller);
         receiver.start();
 
