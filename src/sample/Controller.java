@@ -45,7 +45,7 @@ public class Controller {
     @FXML
     private ListView<String> messageListView; //メッセージリスト表示部
     //メッセージリストの中身
-    ObservableList<String> messageList = FXCollections.observableArrayList("a1","b2","c3");
+    private ObservableList<String> messageList = FXCollections.observableArrayList("a1","b2","c3");
     @FXML
     private TextArea messageTextArea;//メッセージ入力欄
     @FXML
@@ -57,7 +57,7 @@ public class Controller {
     @FXML
     private ListView<String> memberListView;    //メンバー表示部
     //メンバーリストの中身
-    ObservableList<String> memberList = FXCollections.observableArrayList(
+    private ObservableList<String> memberList = FXCollections.observableArrayList(
             "kasyukiyomitsu","iwatoshi","daihannyanagamitsu");
     @FXML
     private Label selectMemberLabel;    //選択したメンバーの表示部
@@ -78,20 +78,30 @@ public class Controller {
     {
         String sendMessage = messageTextArea.getText();
         //データをマルチキャスト送信
-        Sender.sendMessage(sendMessage);
+        //コマンド付き！
+        Sender.sendMessage("MM::" + sendMessage);
         messageTextArea.clear();
     }
 
-    //サーバからメッセージを受信したときに追加する
-    public void receiveMessage(String receiveMessage) {
-        //構文解析！！！！
-        //メッセージだったとき    MM::で始まる
-        messageList.add(receiveMessage);
-        //メンバー追加だったとき AM::で始まる
-        memberList.add(name);
-        //メンバー削除だったとき RM::で始まる
-        memberList.remove(name);
-
+    //外部からメッセージを受信したときに追加する
+    void receiveMessage(String receiveMessage) {
+        //構文解析！！！ public String[] split(String regex, int limit) 文字列の分割
+        //receiveMessageは"コマンド::本文"という想定
+        String[]  strings = receiveMessage.split("::");
+        switch (strings[0]) {
+            //メッセージだったとき    MM::で始まる
+            case "MM":
+                messageList.add(strings[1]);
+                break;
+            //メンバー追加だったとき AM::で始まる
+            case "AM":
+                memberList.add(strings[1]);
+                break;
+            //メンバー削除だったとき RM::で始まる
+            case "RM":
+                memberList.remove(strings[1]);
+                break;
+        }
         //他にもいろいろあるだろうな
     }
 
