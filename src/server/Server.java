@@ -26,11 +26,11 @@ public class Server {
     //参加人数
     private static final int MEMBER_NUM = 4;
     //役職リスト
-    private static final String[] ROLLS = {"占い師","怪盗","人狼","人狼","村人","村人"};
+    private static final String[] ROLES = {"占い師","怪盗","人狼","人狼","村人","村人"};
 
     public Server() {
 
-        members = new ArrayList<Member>();
+        members = new ArrayList<>();
 
         MulticastSocket socket = null;
         InetAddress mcastAddress;
@@ -84,8 +84,8 @@ public class Server {
                             //交換&返却
                             changeCard(line[1], line[3]);
                             break;
-                        case "CM":  //チャット  all::送信元::CM::本文
-                            break;
+                        //case "CM":  //チャット  all::送信元::CM::本文
+                        //    break;
                         case "VT":  //投票
                             voting(line[1], line[3]);
                             break;
@@ -146,71 +146,82 @@ public class Server {
         //占い結果(役職)を取得し返却する
         String body = "";
         if (target.equals("その他")) {
-            String[] rolls = ROLLS;
+            String[] roles = ROLES;
             String message = "";
             String message2 = "";
             for (Member m : members) {
-                String s = m.getRoll();
-                for (int i = 0; i < rolls.length; i++) {
-                    if (s.equals(rolls[i])) {
-                        rolls[i] = "0";
+                String s = m.getRole();
+                for (int i = 0; i < roles.length; i++) {
+                    if (s.equals(roles[i])) {
+                        roles[i] = "0";
                         break;
                     }
                 }
             }
-            for (int i = 0; i < rolls.length; i++) {
-                if (rolls[i] != "0") {
+            for (int i = 0; i < roles.length; i++) {
+                if (!roles[i].equals("0")) {
                     if (message.equals("")) {
-                        message = rolls[i];
+                        message = roles[i];
                     } else {
-                        message2 = "と" + rolls[i];
+                        message2 = " と " + roles[i];
                     }
                 }
             }
-            body = target + " の占い結果は " + message2 + " でした";
+            body = target + " の占い結果は 【" + message + message2 + "】 でした";
         } else
             for (Member m : members)
                 if (m.getName().equals(target)) {
-                    body = target + " の占い結果は " + m.getRoll() + " でした";
+                    body = target + " の占い結果は 【" + m.getRole() + "】 でした";
                     break;
                 }
         Sender.sendMessage(fortuneTeller + "::server::FR::" + body);
+        System.out.println("送信 >> " + fortuneTeller + "::server::FR::" + body);
+        ftActEnd = true; //こうどうおわりました～
     }
 
     private void openWolf() {
         String body = null;
         for (Member m : members) {
-            if (m.getRoll().equals("人狼")) {
+            if (m.getRole().equals("人狼")) {
                 if (body == null) body = m.getName();
                 else body = body.concat(" と " + m.getName());
             }
         }
-        if(body == null){ //人狼いない
+        if(body == null){ //人狼いないならなにも送らない
             return;
         }else{
-            body = body.concat(" です。");
+            body = body.concat("】 です。");
         }
-        Sender.sendMessage("all::server::WR::人狼は " + body);
+        Sender.sendMessage("all::server::WR::人狼は 【" + body);
+        System.out.println("送信 >> " + "all::server::WR::人狼は 【" + body);
     }
 
     private void changeCard(String phantomThief, String target) {
-        String body = "あなたは ";
-        String roll;
+        String body = null;
         if (target.equals("なにもしない")) {
-            body = body.concat("なにもしませんでした");
-        } else
+            body = "なにもしませんでした";
+        } else {
             for (Member m : members) {
                 if (m.getName().equals(target)) {
-                    roll = m.getRoll();
-                    m.setRoll("怪盗");
+                    body = m.getRole();
+                    m.setRole("怪盗");
                     break;
                 }
             }
+            for (Member m : members) {
+                if (m.getName().equals(phantomThief)) {
+                    m.setRole(body);
+                    break;
+                }
+            }
+        }
         Sender.sendMessage(phantomThief + "::server::PR::" + body);
+        System.out.println("送信 >> " + phantomThief + "::server::PR::" + body);
+        ptActEnd = true; //こうどうおわりました～
     }
 
     private void setting(){
-        String[] rolls = ROLLS;
+        String[] rolls = ROLES;
         Random r = new Random();
         for(int i = 0; i < MEMBER_NUM + 2 ; i++){
             int u = r.nextInt( MEMBER_NUM + 2);
@@ -221,15 +232,15 @@ public class Server {
         for(int i = 0; i < MEMBER_NUM; i++){
             System.out.println(i);
             Member m = members.get(i);
-            m.setRoll(rolls[i]);
-            System.out.println(m.getName() + "は" + m.getRoll() +"になりました");
-            Sender.sendMessage(m.getName() + "::server::RD::" + m.getRoll());
+            m.setRole(rolls[i]);
+            System.out.println(m.getName() + "は" + m.getRole() +"になりました");
+            Sender.sendMessage(m.getName() + "::server::RD::" + m.getRole());
         }
     }
 
     //投票と集計
     private void voting(String voter, String destination){
-        System.out.println(voter +"は"+destination+"に投票しました");
+        System.out.println(voter +" は "+destination+" に投票しました");
         for(Member m : members){
             //投票先
             if(m.getName().equals(voter))
@@ -242,8 +253,12 @@ public class Server {
 
     //処刑者決定
     private ArrayList<String> judgement(){
+        System.out.println("名前,票数");            //////////////////////////
+        for(Member m : members){                    //////////////////////////
+            System.out.println(m.getName()+","+m.getVoteNum()); ////////////////////
+        }
         //処刑される人リスト
-        ArrayList<String> executed = new ArrayList<String>();
+        ArrayList<String> executed = new ArrayList<>();
         //最大投票数
         int maxVote = 0;
         //同数は全員処刑。全員同数のみ処刑なし
@@ -252,13 +267,18 @@ public class Server {
                 maxVote = m.getVoteNum();
                 executed.clear();
                 executed.add(m.getName());
+                System.out.println("clear");                                    /////////////////////////
+                System.out.println("KIll most:"+m.getName()+","+m.getVoteNum());////////////////////////////
             } else if(maxVote == m.getVoteNum()) {  //最大と同じだったら処刑
                 maxVote = m.getVoteNum();
                 executed.add(m.getName());
+                System.out.println("puls :"+m.getName()+","+m.getVoteNum()); //////////////////////////
+
             }
         }
         if(executed.size() == MEMBER_NUM){  //全員同数だった場合
             executed.clear();  //誰も処刑されない
+            System.out.println("none");                   ////////////////////////
         }
         return executed;
     }
@@ -274,22 +294,32 @@ public class Server {
         th.start();
     }
 
+
+    //占い師行動管理
+    private boolean ftActEnd = false;
+    //怪盗行動管理
+    private boolean ptActEnd = false;
+
+
     //タイムキーパー
     private class myTimer implements Runnable{
         long time = 0;
         //お知らせ用
-        Boolean ftAct = false;
-        Boolean wwAct = false;
-        Boolean ptAct = false;
-        Boolean discussionStart = false;
-        Boolean votingStart = false;
-        Boolean resultsAnnounce = false;
+        boolean ftAct = false;
+        boolean wwAct = false;
+        boolean ptAct = false;
+        boolean discussionStart = false;
+        boolean votingStart = false;
+        boolean resultsAnnounce = false;
 
         int iniPeriod = 10;
-        int ftWwPeriod = 20 + iniPeriod;
-        int ptPeriod = 20 + ftWwPeriod;
-        int disPeriod = 20 + ptPeriod;
-        int votePeriod = 30 + disPeriod;
+        int ftWwPeriod = 10 + iniPeriod;
+        int ptPeriod = 10 + ftWwPeriod;
+        int disPeriod = 60 + ptPeriod;
+        int votePeriod = 10 + disPeriod;
+
+        //投票チェック
+        boolean votingEnd = false;
 
         @Override
         public void run() {
@@ -331,7 +361,15 @@ public class Server {
                 }
                 //怪盗の時間が10秒
                 else if (time <= ptPeriod) {
-                    //怪盗へ行動要請
+
+                    //最初に占い師がタイムオーバーしてたら（なにもそうしんされてこなかったら）占い師にその他の結果をわたす
+                    if(!ftActEnd){
+                        for(Member m : members) {
+                            if (m.getRole().equals("占い師"))
+                                checkCard(m.getName(), "その他");
+                        }
+                    }
+                    //おしらせ
                     if (!ptAct) {
                         Sender.sendMessage("all::server::PA::盗む人を選択してください");
                         ptAct = true;
@@ -340,6 +378,15 @@ public class Server {
                 }
                 //話し合い時間が180秒
                 else if (time <= disPeriod) {
+
+                    //最初に怪盗タイムオーバーしてたら…
+                    if(!ptActEnd) {
+                        for (Member m : members) {
+                            if (m.getRole().equals("怪盗"))
+                                changeCard(m.getName(), "なにもしない");
+                        }
+                    }
+
                     if (!discussionStart) {
                         Sender.sendMessage("all::server::DS::話し合いを開始してください");
                         discussionStart = true;
@@ -356,61 +403,93 @@ public class Server {
                     Sender.sendMessage("all::server::TM::" + (votePeriod - time));
                 }
                 else{ //おわり
+
+                    //////////////////////////未投票の人はどうするか？
+                    //投票先が空欄の人は、自分に投票したことにする
+                    if(!votingEnd) {
+                        for (Member m : members) {
+                            if (m.getVote() == null) {
+                                voting(m.getName(), m.getName());
+                            }
+                        }
+                        votingEnd = true;
+                    }
                     if (!resultsAnnounce) {
                         //投票結果発表
-                         ArrayList<String> exes = judgement();
-                         String result = null;
+                        ArrayList<String> exes = judgement();
+                        String result = null;
                         if (exes.isEmpty()){
                             result = "誰もいません";
-                         }else{
+                        }else{
                             for(String e : exes){
-                                if(result == null) result = e;
-                                result = result.concat(" と " + e);
+                                if(result == null){ result = e;}          //////////////////////
+                                else { result = result.concat(" と " + e);} //////////////////// if(){}else{} の elseつけたよ
                             }
-                             result.concat(" です");
-                         }
+                            result = result.concat(" です");      //ですつきました
+                        }
                         Sender.sendMessage("all::server::RS::処刑される人は " + result);
 
-                        boolean humanIsVictory = false;
+                        boolean humanIsVictory = false;            //memo 村人側：負け
+                        System.out.println("はじめ：村人側　負け"); ///////////////////////
 
                         outside:for(Member m: members) {
                             //誰も処刑せず人狼がいた場合
                             if(exes.isEmpty()) {
                                 humanIsVictory = true;
-                                if (m.getName().equals("人狼")) {
-                                    humanIsVictory = false;
+                                System.out.println("村人側勝ちに決定 ver1"); ///////////////////////////
+                                if (m.getRole().equals("人狼")) {                 ///////////// getName()からgetRol()にしたよ
+                                    humanIsVictory = false;                        ////memo 村人側：負け
+                                    System.out.println("と、思いきや、村人側負けに決定");/////////////////
                                     break outside;
                                 }
                             }
-                            else //人狼を処刑できていた場合
-                            for (String s : exes) {
-                                if (m.getName().equals(s)) {
-                                    m.getRoll().equals("人狼");
-                                    humanIsVictory = true;
-                                    break outside;
+                            else {//人狼を処刑できていた場合                  //memoだれかしら処刑　else {}の{} 好みでいれた
+                                for (String s : exes) {
+                                    if (m.getName().equals(s) && m.getRole().equals("人狼") ) {
+                                        //m.getRoll().equals("人狼");               //memo 処刑された人が人狼の時
+                                        humanIsVictory = true;                      ////memo 村人側：勝ち
+                                        System.out.println("村人側勝ちに決定　ver2");//////
+                                        System.out.println(s + "は処刑");////////////////////
+                                        System.out.println(m.getName() + "は人狼");///////////
+                                        break outside;
+                                    }
                                 }
                             }
                         }
 
-                        String humanResult = "敗北しました...";
-                        String wolfResult = "勝利しました！";
+                        System.out.println("終わり：村人側の勝ちは：" + humanIsVictory); ///////////////////////
+                        //String humanResult = "敗北しました...";
+                        //String wolfResult = "勝利しました！";
+                        String humanResult = "敗北しました...(村人側)";
+                        String wolfResult = "勝利しました！(人狼)";
 
                         if(humanIsVictory){
-                            humanResult = "勝利しました！";
-                            wolfResult = "敗北しました...";
+                            //humanResult = "勝利しました！";
+                            //wolfResult = "敗北しました...";
+                            humanResult = "勝利しました！(村人側)";
+                            wolfResult = "敗北しました...(人狼)";
                         }
                         for(Member m: members){
-                            if (m.getName().equals("人狼")) {
+                            if (m.getRole().equals("人狼")) {        /////////////// getName() から getRol()　にしたよ
                                 result = wolfResult;
                             }else{
                                 result = humanResult;
                             }
                             //勝敗を送信
                             Sender.sendMessage(m.getName()+"::server::RS::あなたは "+result);
+
                         }
+                        for(Member m: members) {                                             ///////各役職の発表
+                            Sender.sendMessage("all::server::CM::" + m.getName() + "の役職は :" + m.getRole()); ////////////////
+                        }                                                                   ////////////////////
 
                         resultsAnnounce = true;
-                    }
+
+                        //このあと、もう一戦できるようにしたい。
+                        //setting() と timerの0を更新 ができればいいと思う
+                        //フラグ管理。受信内でmenberが4人になったときと同じようなふうに（受信内にかく）
+
+                    }//if resultsAnnounce end
 
                 }
             }

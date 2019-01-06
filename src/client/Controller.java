@@ -58,6 +58,12 @@ public class Controller {
     @FXML
     private AnchorPane rootPane;        //がめん
 
+    @FXML
+    private Label nameLabel;    //名前表示部
+    @FXML
+    private Label roleLabel;    //役職表示部
+
+
 
     //メンバーリストで選択されたメンバーをselectMemberLabelに表示する
     public void memberSelected(){
@@ -69,7 +75,7 @@ public class Controller {
     public void memberSendButtonClick(){
         //選択されたメンバーを送信
         if(command == null){    //投票の時はcommand == VTです
-            switch (myRoll){
+            switch (myRole){
                 case "占い師":
                     command = "FM";
                     break;
@@ -78,7 +84,8 @@ public class Controller {
                     break;
             }
         }
-        Sender.sendMessage("server::" + myName + "::"+ command +"::" + selectMemberLabel.getText());
+        //Sender.sendMessage("server::" + myName + "::"+ command +"::" + selectMemberLabel.getText());
+        Sender.sendMessage("server::" + myName + "::"+ command +"::" + memberListView.getSelectionModel().getSelectedItem());
         memberSendButton.setDisable(true); //使えなくなる
         command = null;
     }
@@ -88,9 +95,10 @@ public class Controller {
         String sendMessage = messageTextArea.getText();
         //データをマルチキャスト送信
         //コマンド付き！
-        if(sendMessage != null)
-           Sender.sendMessage("all::" + myName + "::CM::" + sendMessage);
-        messageTextArea.clear();
+        if(!sendMessage.equals("")) {   //空白はダメ～
+            Sender.sendMessage("all::" + myName + "::CM::" + sendMessage);
+            messageTextArea.clear();
+        }
     }
 
     //外部からメッセージを受信したときに追加する
@@ -126,7 +134,7 @@ public class Controller {
 
                 //参加時メンバーリストを渡されたとき
                 case "ML":
-                    this.createMemberListView(strings[3]);
+                    this.createMemberListView(strings[3]);//リストに入れてく
                     break;
 
                 //ゲーム開始
@@ -143,16 +151,26 @@ public class Controller {
                 //役職決定
                 case "RD":
                     //役職表示
-                    messageList.add("あなたは" + strings[3] + "です");
-                    myRoll = strings[3];
+                    messageList.add("あなたは 【" + strings[3] + "】 です");
+                    myRole = strings[3];
+                    //役職ラベルに役職表示！！！！/////////////////////////////////////
+                    roleLabel.setText("役職：" + strings[3]);
                     break;
 
                 //占い師の行動要請
                 case "FA":
                     //自分がもし占い師だったら
-                    if(myRoll.equals("占い師")) {
+                    if(myRole.equals("占い師")) {
+                        /////////////////自分の名前を消す/////////////////////////////////////////
+                        myListIndex = memberList.indexOf(myName);
+                        memberList.remove(myName);
+                        //////////////////////////////////////////////////////////////////////////////////
                         //選択肢に"その他"を追加
                         memberList.add("その他");
+                        /////////////////デフォがその他になるように///////////////////////////////
+                        memberListView.getSelectionModel().clearSelection();
+                        memberListView.getSelectionModel().select("その他");
+                        ////////////////////////////////////////////////////////////////////////////////////
                         memberSendButton.setDisable(false);
                     }
                     messageList.add("占い師 > " + strings[3]);
@@ -163,11 +181,14 @@ public class Controller {
                     messageList.add("占い師 > " + strings[3]);
                     //選択肢を削除
                     memberList.remove("その他");
+                    /////////////////自分の名前をもどす/////////////////////////////////////////
+                    memberList.add(myListIndex, myName);
+                    ////////////////////////////////////////////////////////////////////////////////
                     break;
 
                 //人狼の確認　みんなに届く
                 case "WR":
-                    if(myRoll.equals("人狼")) {
+                    if(myRole.equals("人狼")) {
                         messageList.add("人狼 > " + strings[3]);
                     }
                     break;
@@ -175,9 +196,17 @@ public class Controller {
                 //怪盗の行動要請　みんなに届く
                 case "PA":
                     //自分がもし怪盗だったら
-                    if(myRoll.equals("怪盗")) {
+                    if(myRole.equals("怪盗")) {
+                        /////////////////自分の名前を消す/////////////////////////////////////////
+                        myListIndex = memberList.indexOf(myName);
+                        memberList.remove(myName);
+                        //////////////////////////////////////////////////////////////////////////////////
                         //選択肢に"なにもしない"を追加
                         memberList.add("なにもしない");
+                        /////////////////デフォがなにもしないになるようにする///////////////////////////////
+                        memberListView.getSelectionModel().clearSelection();
+                        memberListView.getSelectionModel().select("なにもしない");
+                        ////////////////////////////////////////////////////////////////////////////////////
                         memberSendButton.setDisable(false);
                     }
                     messageList.add("怪盗 > " + strings[3]);
@@ -185,18 +214,37 @@ public class Controller {
 
                 //怪盗の結果　怪盗にだけ届く
                 case "PR":
-                    messageList.add("怪盗 > " + strings[3]);
+                    if(strings[3].equals("なにもしませんでした")) {
+                        messageList.add("怪盗 > あなたは " + strings[3]);
+                    }else {
+                        myRole = strings[3];
+                        //役職ラベル変更！！！！/////////////////////////////////////
+                        roleLabel.setText("役職：" + strings[3]);
+                        messageList.add("怪盗 > あなたは 【" + strings[3] + "】 になりました");
+                    }
                     //選択肢を削除
                     memberList.remove("なにもしない");
+                    /////////////////自分の名前もどす////////////////////////////////////////
+                    memberList.add(myListIndex, myName);
+                    //////////////////////////////////////////////////////////////////////////////////
+
                     break;
 
                 //話し合い開始
                 case "DS":
+                    memberSendButton.setDisable(true); //決定ボタン使用不可
+                    messageList.add(strings[3]);    //開始してください～
                     messageTextArea.setDisable(false);
                     messageSendButton.setDisable(false);
                     break;
                 //投票時刻になりました
                 case "VS":
+                    /////////////////自分の名前を消す/////////////////////////////////////////
+                    //memberListView.getSelectionModel().clearSelection();
+                    //myListIndex = memberList.indexOf(myName);
+                    //memberList.remove(myName);
+                    //memberListView.getSelectionModel().selectFirst(); //デフォで先頭の人選択に
+                    //////////////////////////////////////////////////////////////////////////////////
                     messageList.add(strings[3]);
                     command = "VT";
                     memberSendButton.setDisable(false);
@@ -206,14 +254,19 @@ public class Controller {
                     break;
                 //結果発表
                 case "RS":
+                    /////////////////自分の名前をもどす/////////////////////////////////////////
+                    // memberList.add(myListIndex, myName);
+                    //////////////////////////////////////////////////////////////////////////////////
                     messageList.add(strings[3]);
                     //メッセージ送れます
                     messageTextArea.setDisable(false);
                     messageSendButton.setDisable(false);
+                    //退席できます
+                    attendLeaveButton.setDisable(false);
                     break;
                 //タイマー　時間の表示
                 case "TM":
-                    timerLabel.setText("あと" +strings[3] +"秒");
+                    timerLabel.setText("あと " +strings[3] +" 秒");
                     break;
             }
         }
@@ -230,9 +283,11 @@ public class Controller {
     //名前
     private String myName = null;
     //役職
-    private String myRoll = null;
+    private String myRole = null;
     //コマンド
     private String command = null;
+    //自分のリスト上の位置
+    private int myListIndex = 0;
 
     @FXML
     private Button attendLeaveButton;   //参加or退席ボタン
@@ -253,17 +308,28 @@ public class Controller {
             //退席→参加にする
             attendLeaveButton.setText("参加");
 
+            ///////////////////////////////////////////////
+            memberList.removeAll();      /////メンバーリストを空にする処理をいれる（みんなから、ではなく自分のリストを空っぽに。）
+            //////////////////////////////////////////////
+
+            nameLabel.setText("名前：");
+
             //いろいろ使えないようになる
             memberListView.setDisable(true);
             selectMemberLabel.setDisable(true);
             memberSendButton.setDisable(true);
+            nameLabel.setDisable(true);
+            roleLabel.setDisable(true);
         }else{
             String name = messageTextArea.getText();
-            if(name != null) {
+            if(!name.equals("")){
                 //出席処理
                 isAttend = true;
                 this.myName = name;
                 Sender.sendMessage("all::" + name + "::AM::" + name);
+
+                //名前ラベルに名前表示！！！！//////////////////////////
+                nameLabel.setText("名前：" + myName);
 
                 //コメントが送信できるようになる
                 messageSendButton.setDisable(false);
@@ -275,6 +341,8 @@ public class Controller {
                 //いろいろ使えるようになる
                 memberListView.setDisable(false);
                 selectMemberLabel.setDisable(false);
+                nameLabel.setDisable(false);
+                roleLabel.setDisable(false);
             }
         }
     }
