@@ -312,11 +312,11 @@ public class Server {
         boolean votingStart = false;
         boolean resultsAnnounce = false;
 
-        int iniPeriod = 10;
-        int ftWwPeriod = 10 + iniPeriod;
-        int ptPeriod = 10 + ftWwPeriod;
-        int disPeriod = 60 + ptPeriod;
-        int votePeriod = 30 + disPeriod;
+        int iniPeriod = 10;                     //役職の確認時間
+        int ftWwPeriod = 10 + iniPeriod;    //占い師&人狼の行動時間
+        int ptPeriod = 10 + ftWwPeriod;     //怪盗の行動時間
+        int disPeriod = 60 + ptPeriod;      //話し合い時間
+        int votePeriod = 30 + disPeriod;    //投票時間
 
         //投票チェック
         boolean votingEnd = false;
