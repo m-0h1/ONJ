@@ -22,7 +22,7 @@ public class Main extends Application {
         receiver.start();
 
         primaryStage.setTitle("One Night JINROU");
-        primaryStage.setScene(new Scene(root, 600, 400));
+        primaryStage.setScene(new Scene(root, 600, 420));
         primaryStage.show();
     }
 

@@ -9,26 +9,29 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="rootPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.Controller">
+<AnchorPane fx:id="rootPane" prefHeight="420.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.Controller">
    <children>
       <ImageView fx:id="titleImageView" fitHeight="50.0" fitWidth="160.0" layoutX="9.0" layoutY="14.0" pickOnBounds="true" preserveRatio="true">
          <image>
             <Image url="@1nightWorwolf.jpg" />
          </image>
       </ImageView>
-      <Label fx:id="timerLabel" focusTraversable="false" layoutX="68.0" layoutY="67.0" prefHeight="25.0" prefWidth="100.0" text="開始前" wrapText="true">
+      <Label fx:id="timerLabel" focusTraversable="false" layoutX="68.0" layoutY="67.0" prefHeight="25.0" prefWidth="100.0" text="参加前" wrapText="true">
          <font>
             <Font size="20.0" />
          </font></Label>
-      <ListView fx:id="memberListView" disable="true" focusTraversable="false" layoutX="9.0" layoutY="100.0" onMouseClicked="#memberSelected" prefHeight="205.0" prefWidth="160.0" />
-      <Label fx:id="selectMemberLabel" disable="true" focusTraversable="false" layoutX="14.0" layoutY="309.0" prefHeight="36.0" prefWidth="107.0" text="選択した人表示" wrapText="true" />
-      <ListView fx:id="messageListView" focusTraversable="false" layoutX="175.0" layoutY="14.0" prefHeight="300.0" prefWidth="410.0" />
-      <Label fx:id="nameLabel" disable="true" layoutX="15.0" layoutY="344.0" prefHeight="20.0" prefWidth="147.0" text="名前：" />
-      <Label fx:id="roleLabel" disable="true" layoutX="15.0" layoutY="364.0" prefHeight="20.0" prefWidth="147.0" text="役職：" />
-           <Button fx:id="messageSendButton" disable="true" focusTraversable="false" layoutX="500.0" layoutY="327.0" onAction="#messageSendButtonClick" text="送信" />
-      <TextArea fx:id="messageTextArea" focusTraversable="false" layoutX="175.0" layoutY="319.0" prefHeight="70.0" prefWidth="318.0" promptText="名前を入力してください" wrapText="true" />
-      <Button fx:id="memberSendButton" disable="true" focusTraversable="false" layoutX="126.0" layoutY="314.0" mnemonicParsing="false" onAction="#memberSendButtonClick" prefHeight="25.0" prefWidth="40.0" text="決定" />
-      <Button fx:id="restartButton" disable="true" layoutX="546.0" layoutY="360.0" mnemonicParsing="false" onAction="#restartButtonClick" text="再戦" />
-      <Button fx:id="attendLeaveButton" layoutX="546.0" layoutY="327.0" mnemonicParsing="false" onAction="#attendLeaveButtonClick" text="参加" />
+      <ListView fx:id="memberListView" disable="true" focusTraversable="false" layoutX="9.0" layoutY="107.0" onMouseClicked="#memberSelected" prefHeight="100.0" prefWidth="160.0" />
+      <Label fx:id="selectMemberLabel" disable="true" focusTraversable="false" layoutX="9.0" layoutY="207.0" prefHeight="36.0" prefWidth="107.0" text="選択した人表示" wrapText="true" />
+      <Label layoutX="9.0" layoutY="87.0" prefHeight="20.0" prefWidth="40.0" text="参戦者" />
+      <ListView fx:id="messageListView" focusTraversable="false" layoutX="177.0" layoutY="14.0" prefHeight="300.0" prefWidth="408.0" />
+      <Label fx:id="nameLabel" disable="true" layoutX="177.0" layoutY="317.0" prefHeight="20.0" prefWidth="147.0" text="名前：" />
+      <Label fx:id="roleLabel" disable="true" layoutX="324.0" layoutY="317.0" prefHeight="20.0" prefWidth="147.0" text="役職：" />
+      <Button fx:id="messageSendButton" disable="true" focusTraversable="false" layoutX="500.0" layoutY="350.0" onAction="#messageSendButtonClick" text="送信" />
+      <TextArea fx:id="messageTextArea" focusTraversable="false" layoutX="177.0" layoutY="339.0" prefHeight="74.0" prefWidth="318.0" promptText="名前を入力してください" wrapText="true" />
+      <Button fx:id="memberSendButton" disable="true" focusTraversable="false" layoutX="128.0" layoutY="213.0" mnemonicParsing="false" onAction="#memberSendButtonClick" prefHeight="25.0" prefWidth="40.0" text="決定" />
+      <Button fx:id="enterButton" disable="true" layoutX="545.0" layoutY="380.0" mnemonicParsing="false" onAction="#enterButtonClick" text="参戦" />
+      <Button fx:id="attendLeaveButton" layoutX="545.0" layoutY="350.0" mnemonicParsing="false" onAction="#attendLeaveButtonClick" text="参加" />
+      <ListView fx:id="attendanceListView" disable="true" focusTraversable="false" layoutX="9.0" layoutY="265.0" onMouseClicked="#memberSelected" prefHeight="148.0" prefWidth="160.0" />
+      <Label layoutX="9.0" layoutY="243.0" prefHeight="20.0" prefWidth="47.0" text="村人たち" />
    </children>
 </AnchorPane>

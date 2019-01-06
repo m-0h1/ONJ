@@ -20,6 +20,9 @@ public class Server {
     //ゲーム参加者リスト
     private ArrayList<Member> members;
 
+    //ゲーム参加者リスト
+    private ArrayList<Member> chatMembers;
+
     //ゲーム管理用フラグ
     private Boolean gameStart = false;
 
@@ -36,6 +39,7 @@ public class Server {
     public Server() {
 
         members = new ArrayList<>();
+        chatMembers=new ArrayList<>();
 
         MulticastSocket socket = null;
         InetAddress mcastAddress;
@@ -73,12 +77,18 @@ public class Server {
                 if (line[0].equals("server") || line[0].equals("all")) { //all or server宛なら
                     //コマンド
                     switch (line[2]) {
-                        case "AM":  //メンバーの参加　all::送信元::AM::
-                            addMember(line[1]);
+                        case "ACM":  //メンバーの参加　all::送信元::ACM::
+                            //addMember(line[1]);
+                            addChatMember(line[1]);// チャットの方だけ
                             break;
-                        case "RM":  //メンバーの退室 all::送信元::RM::
+                        //////////ゲーム参加は "EN"
+                        case "RGM":  //ゲームメンバーのキャンセル all::送信元::RGM::
                             //リストから削除
                             removeMember(line[1]);
+                            break;
+                        case "RCM":  //チャットメンバーの退室 all::送信元::RCM::
+                            //チャットリストから削除
+                            removeChatMember(line[1]);
                             break;
                         case "FM":  //占い師の行動 fortune-teller server::送信元::FM::占い先
                             //本文が占い先
@@ -94,8 +104,9 @@ public class Server {
                         case "VT":  //投票
                             voting(line[1], line[3]);
                             break;
-                        case "EN":  //再戦希望
-                            enterNum++;
+                        case "EN":  //再戦希望　// 参戦
+                            addMember(line[1]); //ゲーム参加
+                            //enterNum++;
                             break;
                         default:
                             break;
@@ -130,40 +141,86 @@ public class Server {
         }
     }
 
+    //ゲームの参加希望者の追加
     private void addMember(String name) {
         //リストに追加
         Member member = new Member(name);
         members.add(member);
-        //送信元に参加者リストを送る
-        String body = null;
-        for (Member m : members) {
-            if (body == null) { body = m.getName(); }
-            else { body = body.concat("," + m.getName()); } //members,ほげ,ふが,ぴよ
-        }
-        //グループに送る
-        Sender.sendMessage(name + "::server::ML::" + body);
-        System.out.println("送信 >> "+ name + "::server::ML::" + body);
 
         //参加者増加
         enterNum++;
+        System.out.println("現在の参加人数:"+enterNum);
+    }
+    //チャット参加者　追加         ///////////チャットメンバーリスト.ゲームメンバーリスト.プレイ中かを送る
+    private void addChatMember(String name) {
+        //リストに追加
+        Member member = new Member(name);
+        chatMembers.add(member);
+        //送信元に参加者リストを送る
+        String body = null;
+        for (Member cm : chatMembers) {
+            if (body == null) { body = cm.getName(); }
+            else { body = body.concat("," + cm.getName()); } //members,ほげ,ふが,ぴよ
+        }
+        //グループに送る　//新しい人にピンポイントで　//コマンドどっちかかえねば//////////////
+        Sender.sendMessage(name + "::server::CML::" + body);
+        System.out.println("チャットメンバーリスト");
+        System.out.println("送信 >> "+ name + "::server::CML::" + body);
+
+        //チャット参加時にすでにゲーム参加者がいたら、そのリストも送る/////////////
+        if(!members.isEmpty()) {                                          //////////
+            String body2 = null;                                            //////
+            for (Member m : members) {                                      //////
+                if (body2 == null) { body2 = m.getName(); }                 ///////
+                else { body2 = body2.concat("," + m.getName()); } //members,ほげ,ふが,ぴよ
+            }                                                                               /////
+            //グループに送る　//新しい人にピンポイントで　//コマンドどっちかかえねば        /////
+            Sender.sendMessage(name + "::server::GML::" + body2);                            /////
+            System.out.println("ゲームメンバーリスト");                                   ///////
+            System.out.println("送信 >> " + name + "::server::GML::" + body2);                /////
+            /////////////////////////////////////////////////////////////////////////////////////
+        }
+        if(gameStart) {Sender.sendMessage(name+"::server::NOW::"+"no" );}
+        else{Sender.sendMessage(name+"::server::NOW::ok" );}
+
+        //チャットは何人でも
+        //参加者増加
+        //enterNum++;
+        //System.out.println("現在の参加人数:"+enterNum);
     }
 
+
+    //ゲームの参加　辞める
     private void removeMember(String name) {
-        for (Member m : members)
+        for (Member m : members) {
             if (m.getName().equals(name)) {
                 members.remove(m);
                 break;
             }
-
+        }
         //参加者減少
         enterNum--;
+        System.out.println("現在の参加人数:"+enterNum);
+    }
+    //チャット参加　やめる
+    private void removeChatMember(String name) {
+        for (Member cm : chatMembers)
+            if (cm.getName().equals(name)) {
+                chatMembers.remove(cm);
+                break;
+            }
+
+        //参加者減少
+        //enterNum--;
+        //System.out.println("現在の参加人数:"+enterNum);
     }
 
     private void checkCard(String fortuneTeller, String target) {
         //占い結果(役職)を取得し返却する
         String body = "";
         if (target.equals("その他")) {
-            String[] roles = ROLES;
+            String[] roles = ROLES.clone();           /////////////////ここでもclone()使うとは…
+            System.out.println(roles[0]+","+roles[1]+","+roles[2]+","+roles[3]+roles[4]+","+roles[5]);
             String message = "";
             String message2 = "";
             for (Member m : members) {
@@ -175,6 +232,10 @@ public class Server {
                     }
                 }
             }
+            for(Member m:members){
+                System.out.println(m.getName()+","+m.getRole());
+            }
+            System.out.println(roles[0]+","+roles[1]+","+roles[2]+","+roles[3]+roles[4]+","+roles[5]);
             for (int i = 0; i < roles.length; i++) {
                 if (!roles[i].equals("0")) {
                     if (message.equals("")) {
@@ -238,7 +299,8 @@ public class Server {
     }
 
     private void setting(){
-        String[] rolls = ROLES;
+        String[] rolls = ROLES.clone();           /////////////////ここでもclone()使うとは…
+        System.out.println(rolls[0]+","+rolls[1]+","+rolls[2]+","+rolls[3]+","+rolls[4]+","+rolls[5]);
         Random r = new Random();
         for(int i = 0; i < MEMBER_NUM + 2 ; i++){
             int u = r.nextInt( MEMBER_NUM + 2);
@@ -246,6 +308,7 @@ public class Server {
             rolls[i] = rolls[u];
             rolls[u] = c;
         }
+        System.out.println(rolls[0]+","+rolls[1]+","+rolls[2]+","+rolls[3]+rolls[4]+","+rolls[5]);
         for(int i = 0; i < MEMBER_NUM; i++){
             System.out.println(i);
             Member m = members.get(i);
@@ -478,17 +541,18 @@ public class Server {
                         }
 
                         System.out.println("終わり：村人側の勝ちは：" + humanIsVictory); ///////////////////////
-                        //String humanResult = "敗北しました...";
-                        //String wolfResult = "勝利しました！";
+
                         String humanResult = "敗北しました...(村人側)";
                         String wolfResult = "勝利しました！(人狼)";
+                        String nonPrayerResult="人狼の勝利です";
 
                         if(humanIsVictory){
-                            //humanResult = "勝利しました！";
-                            //wolfResult = "敗北しました...";
                             humanResult = "勝利しました！(村人側)";
                             wolfResult = "敗北しました...(人狼)";
+                            nonPrayerResult="村人側の勝利です";
                         }
+
+                        Sender.sendMessage("all::server::ARS::"+nonPrayerResult);///////////全員に勝敗通知
                         for(Member m: members){
                             if (m.getRole().equals("人狼")) {        /////////////// getName() から getRol()　にしたよ
                                 result = wolfResult;
@@ -500,7 +564,7 @@ public class Server {
 
                         }
                         for(Member m: members) {                                             ///////各役職の発表
-                            Sender.sendMessage("all::server::CM::" + m.getName() + "の役職は :" + m.getRole()); ////////////////
+                            Sender.sendMessage("all::server::ARS::" + m.getName() + "の役職は :" + m.getRole()); ////////////////
                         }                                                                   ////////////////////
 
                         resultsAnnounce = true;
@@ -511,12 +575,13 @@ public class Server {
 
                         //いろいろリセット////////////////////////////////////////
                         enterNum = 0;
-                        for(Member m : members){
-                            m.setVoteNum(0);
-                            m.setVote(null);
-                        }
-
-                        Sender.sendMessage("all::server::RG::もう一度ゲームに参加する場合は【再戦】を押してください。");
+                        members.clear();//////////////////////ゲームメンバー初期化
+                        //Sender.sendMessage("all::server::RG::もう一度ゲームに参加する場合は【再戦】を押してください。");
+                        Sender.sendMessage("all::server::RG::ゲームに参加する場合は【参戦】を押してください。");
+                        //占い師行動管理
+                        ftActEnd = false; ///これぬけるとあかん
+                        //怪盗行動管理
+                        ptActEnd = false; ///これぬけるとあかん
 
                         gameStart = false; //終了。run end
 
