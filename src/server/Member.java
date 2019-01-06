@@ -9,11 +9,9 @@ public class Member {
     int getVoteNum() {
         return voteNum;
     }
-
     void setVoteNum(int voteNum) {
         this.voteNum = voteNum;
     }
-
     Member(String name){
         this.setName(name);
     }
@@ -29,7 +27,7 @@ public class Member {
     void setRole(String role) {
         this.role = role;
     }
-    public String getVote() {
+    String getVote() {
         return vote;
     }
     void setVote(String vote) {

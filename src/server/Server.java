@@ -23,10 +23,15 @@ public class Server {
     //ゲーム管理用フラグ
     private Boolean gameStart = false;
 
-    //参加人数
+    //ゲームの必要人数
     private static final int MEMBER_NUM = 4;
+
+    //ゲームへの参加人数
+    private int enterNum = 0;
+
     //役職リスト
     private static final String[] ROLES = {"占い師","怪盗","人狼","人狼","村人","村人"};
+
 
     public Server() {
 
@@ -89,6 +94,9 @@ public class Server {
                         case "VT":  //投票
                             voting(line[1], line[3]);
                             break;
+                        case "EN":  //再戦希望
+                            enterNum++;
+                            break;
                         default:
                             break;
                     }//switch end
@@ -96,7 +104,10 @@ public class Server {
 
                 //ゲーム開始人数に達した
                 if(!gameStart) {
-                    if (members.size() == MEMBER_NUM) {
+
+                    //参加意思確認
+                    if (enterNum == 4) { //四人の開始同意があるかどうかで見るか？
+
                         System.out.println("ゲーム開始");
                         //開始の合図
                         Sender.sendMessage("all::server::GS::ワンナイト人狼　開始します");
@@ -132,6 +143,9 @@ public class Server {
         //グループに送る
         Sender.sendMessage(name + "::server::ML::" + body);
         System.out.println("送信 >> "+ name + "::server::ML::" + body);
+
+        //参加者増加
+        enterNum++;
     }
 
     private void removeMember(String name) {
@@ -140,6 +154,9 @@ public class Server {
                 members.remove(m);
                 break;
             }
+
+        //参加者減少
+        enterNum--;
     }
 
     private void checkCard(String fortuneTeller, String target) {
@@ -283,9 +300,12 @@ public class Server {
         return executed;
     }
 
+
     //開始時間
     private long startTime = 0;
 
+
+    //タイマー生成&スタート
     private void timerStart(){
         startTime = System.currentTimeMillis();
         myTimer t = new myTimer();
@@ -419,15 +439,15 @@ public class Server {
                         ArrayList<String> exes = judgement();
                         String result = null;
                         if (exes.isEmpty()){
-                            result = "誰もいません";
+                            result = "誰もいません】";
                         }else{
                             for(String e : exes){
                                 if(result == null){ result = e;}          //////////////////////
                                 else { result = result.concat(" と " + e);} //////////////////// if(){}else{} の elseつけたよ
                             }
-                            result = result.concat(" です");      //ですつきました
+                            result = result.concat("】です");      //ですつきました
                         }
-                        Sender.sendMessage("all::server::RS::処刑される人は " + result);
+                        Sender.sendMessage("all::server::RS::処刑される人は【" + result);
 
                         boolean humanIsVictory = false;            //memo 村人側：負け
                         System.out.println("はじめ：村人側　負け"); ///////////////////////
@@ -489,10 +509,22 @@ public class Server {
                         //setting() と timerの0を更新 ができればいいと思う
                         //フラグ管理。受信内でmenberが4人になったときと同じようなふうに（受信内にかく）
 
+                        //いろいろリセット////////////////////////////////////////
+                        enterNum = 0;
+                        for(Member m : members){
+                            m.setVoteNum(0);
+                            m.setVote(null);
+                        }
+
+                        Sender.sendMessage("all::server::RG::もう一度ゲームに参加する場合は【再戦】を押してください。");
+
+                        gameStart = false; //終了。run end
+
                     }//if resultsAnnounce end
 
-                }
-            }
+                }//try end
+
+            }//while gameStart end
         }
     }
 

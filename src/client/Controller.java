@@ -65,6 +65,15 @@ public class Controller {
     @FXML
     private Label roleLabel;    //役職表示部
 
+    @FXML
+    private Button restartButton;   //再戦ボタン
+
+    //再戦ボタンクリック
+    public void restartButtonClick(){
+        //再戦希望を送る
+        Sender.sendMessage("server::" + myName + "::EN::再戦希望");
+        restartButton.setDisable(true);
+    }
 
 
     //メンバーリストで選択されたメンバーをselectMemberLabelに表示する
@@ -90,6 +99,7 @@ public class Controller {
         Sender.sendMessage("server::" + myName + "::"+ command +"::" + memberListView.getSelectionModel().getSelectedItem());
         memberSendButton.setDisable(true); //使えなくなる
         command = null;
+        messageList.add("あなたは【"+ memberListView.getSelectionModel().getSelectedItem() + "】を選択しました");
     }
 
     //メッセージ送信ボタンをクリックすると呼び出されるメソッド
@@ -265,6 +275,12 @@ public class Controller {
                     messageSendButton.setDisable(false);
                     //退席できます
                     attendLeaveButton.setDisable(false);
+                    break;
+                //再戦のお誘い
+                case "RG":
+                    messageList.add(strings[3]);
+                    //再戦ボタンを有効に/////////////////////////////////
+                    restartButton.setDisable(false);
                     break;
                 //タイマー　時間の表示
                 case "TM":

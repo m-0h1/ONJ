@@ -25,9 +25,10 @@
       <ListView fx:id="messageListView" focusTraversable="false" layoutX="175.0" layoutY="14.0" prefHeight="300.0" prefWidth="410.0" />
       <Label fx:id="nameLabel" disable="true" layoutX="15.0" layoutY="344.0" prefHeight="20.0" prefWidth="147.0" text="名前：" />
       <Label fx:id="roleLabel" disable="true" layoutX="15.0" layoutY="364.0" prefHeight="20.0" prefWidth="147.0" text="役職：" />
-           <Button fx:id="messageSendButton" disable="true" focusTraversable="false" layoutX="500.0" layoutY="344.0" onAction="#messageSendButtonClick" text="送信" />
+           <Button fx:id="messageSendButton" disable="true" focusTraversable="false" layoutX="500.0" layoutY="327.0" onAction="#messageSendButtonClick" text="送信" />
       <TextArea fx:id="messageTextArea" focusTraversable="false" layoutX="175.0" layoutY="319.0" prefHeight="70.0" prefWidth="318.0" promptText="名前を入力してください" wrapText="true" />
       <Button fx:id="memberSendButton" disable="true" focusTraversable="false" layoutX="126.0" layoutY="314.0" mnemonicParsing="false" onAction="#memberSendButtonClick" prefHeight="25.0" prefWidth="40.0" text="決定" />
-      <Button fx:id="attendLeaveButton" layoutX="546.0" layoutY="344.0" mnemonicParsing="false" onAction="#attendLeaveButtonClick" text="参加" />
+      <Button fx:id="restartButton" disable="true" layoutX="546.0" layoutY="360.0" mnemonicParsing="false" onAction="#restartButtonClick" text="再戦" />
+      <Button fx:id="attendLeaveButton" layoutX="546.0" layoutY="327.0" mnemonicParsing="false" onAction="#attendLeaveButtonClick" text="参加" />
    </children>
 </AnchorPane>
