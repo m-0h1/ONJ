@@ -5,6 +5,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.collections.ObservableList;
 import javafx.collections.FXCollections;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 
 //メッセージ受信用　thread的な奴
@@ -43,7 +44,8 @@ public class Controller {
     @FXML
     private Button messageSendButton;    //メッセージ送信ボタン
     @FXML
-    private Label titleLabel;   //タイトル表示部
+    private ImageView titleImageView;
+    //private Label titleLabel;   //タイトル表示部
     @FXML
     private Label timerLabel;   //タイマー表示部
     @FXML
