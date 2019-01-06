@@ -316,7 +316,7 @@ public class Server {
         int ftWwPeriod = 10 + iniPeriod;
         int ptPeriod = 10 + ftWwPeriod;
         int disPeriod = 60 + ptPeriod;
-        int votePeriod = 10 + disPeriod;
+        int votePeriod = 30 + disPeriod;
 
         //投票チェック
         boolean votingEnd = false;
