@@ -35,11 +35,12 @@ public class Server {
     //役職リスト
     private static final String[] ROLES = {"占い師","怪盗","人狼","人狼","村人","村人"};
 
+    private Sender sender;
 
-    public Server() {
+    private Server() {
 
         members = new ArrayList<>();
-        chatMembers=new ArrayList<>();
+        chatMembers = new ArrayList<>();
 
         MulticastSocket socket = null;
         InetAddress mcastAddress;
@@ -55,9 +56,19 @@ public class Server {
             byte buf[] = new byte[Config.PACKET_SIZE];
             DatagramPacket receivePacket = new DatagramPacket(buf, buf.length);
 
+            //試し打ち…　必要っぽい
+            DatagramPacket sendPacket = new DatagramPacket(buf, buf.length, mcastAddress,
+                    Config.MCAST_PORT);
+            socket.send(sendPacket);
+
+            sender = new Sender();
+
             System.out.println("サーバー起動！");
 
+
             while (true) {
+
+
                 //パケット受信
                 socket.receive(receivePacket);
                 String receiveMessage = new String(buf, 0, receivePacket.getLength(), Config.ENCODING);
@@ -121,7 +132,7 @@ public class Server {
 
                         System.out.println("ゲーム開始");
                         //開始の合図
-                        Sender.sendMessage("all::server::GS::ワンナイト人狼　開始します");
+                        sender.sendMessage("all::server::GS::ワンナイト人狼　開始します");
                         //配役
                         setting();
                         gameStart = true;
@@ -163,7 +174,7 @@ public class Server {
             else { body = body.concat("," + cm.getName()); } //members,ほげ,ふが,ぴよ
         }
         //グループに送る　//新しい人にピンポイントで　//コマンドどっちかかえねば//////////////
-        Sender.sendMessage(name + "::server::CML::" + body);
+        sender.sendMessage(name + "::server::CML::" + body);
         System.out.println("チャットメンバーリスト");
         System.out.println("送信 >> "+ name + "::server::CML::" + body);
 
@@ -175,13 +186,13 @@ public class Server {
                 else { body2 = body2.concat("," + m.getName()); } //members,ほげ,ふが,ぴよ
             }                                                                               /////
             //グループに送る　//新しい人にピンポイントで　//コマンドどっちかかえねば        /////
-            Sender.sendMessage(name + "::server::GML::" + body2);                            /////
+            sender.sendMessage(name + "::server::GML::" + body2);                            /////
             System.out.println("ゲームメンバーリスト");                                   ///////
             System.out.println("送信 >> " + name + "::server::GML::" + body2);                /////
             /////////////////////////////////////////////////////////////////////////////////////
         }
-        if(gameStart) {Sender.sendMessage(name+"::server::NOW::"+"no" );}
-        else{Sender.sendMessage(name+"::server::NOW::ok" );}
+        if(gameStart) {sender.sendMessage(name+"::server::NOW::"+"no" );}
+        else{sender.sendMessage(name+"::server::NOW::ok" );}
 
         //チャットは何人でも
         //参加者増加
@@ -252,7 +263,7 @@ public class Server {
                     body = target + " の占い結果は 【" + m.getRole() + "】 でした";
                     break;
                 }
-        Sender.sendMessage(fortuneTeller + "::server::FR::" + body);
+        sender.sendMessage(fortuneTeller + "::server::FR::" + body);
         System.out.println("送信 >> " + fortuneTeller + "::server::FR::" + body);
         ftActEnd = true; //こうどうおわりました～
     }
@@ -270,7 +281,7 @@ public class Server {
         }else{
             body = body.concat("】 です。");
         }
-        Sender.sendMessage("all::server::WR::人狼は 【" + body);
+        sender.sendMessage("all::server::WR::人狼は 【" + body);
         System.out.println("送信 >> " + "all::server::WR::人狼は 【" + body);
     }
 
@@ -293,7 +304,7 @@ public class Server {
                 }
             }
         }
-        Sender.sendMessage(phantomThief + "::server::PR::" + body);
+        sender.sendMessage(phantomThief + "::server::PR::" + body);
         System.out.println("送信 >> " + phantomThief + "::server::PR::" + body);
         ptActEnd = true; //こうどうおわりました～
     }
@@ -314,7 +325,7 @@ public class Server {
             Member m = members.get(i);
             m.setRole(rolls[i]);
             System.out.println(m.getName() + "は" + m.getRole() +"になりました");
-            Sender.sendMessage(m.getName() + "::server::RD::" + m.getRole());
+            sender.sendMessage(m.getName() + "::server::RD::" + m.getRole());
         }
     }
 
@@ -425,13 +436,13 @@ public class Server {
 
                 //役職確認
                 if (time <= iniPeriod) {
-                    Sender.sendMessage("all::server::TM::" + (iniPeriod - time));
+                    sender.sendMessage("all::server::TM::" + (iniPeriod - time));
                 }
                 //占い師&人狼の時間が10秒
                 else if (time <= ftWwPeriod) {
                     //占い師に行動要請
                     if (!ftAct) {
-                        Sender.sendMessage("all::server::FA::占う人を選択してください");
+                        sender.sendMessage("all::server::FA::占う人を選択してください");
                         ftAct = true;
                     }
                     //人狼へ仲間周知
@@ -440,7 +451,7 @@ public class Server {
                         wwAct = true;
                     }
                     //残り時間を知らせる
-                    Sender.sendMessage("all::server::TM::" + (ftWwPeriod - time));
+                    sender.sendMessage("all::server::TM::" + (ftWwPeriod - time));
                 }
                 //怪盗の時間が10秒
                 else if (time <= ptPeriod) {
@@ -454,10 +465,10 @@ public class Server {
                     }
                     //おしらせ
                     if (!ptAct) {
-                        Sender.sendMessage("all::server::PA::盗む人を選択してください");
+                        sender.sendMessage("all::server::PA::盗む人を選択してください");
                         ptAct = true;
                     }
-                    Sender.sendMessage("all::server::TM::" + (ptPeriod - time));
+                    sender.sendMessage("all::server::TM::" + (ptPeriod - time));
                 }
                 //話し合い時間が180秒
                 else if (time <= disPeriod) {
@@ -471,19 +482,19 @@ public class Server {
                     }
 
                     if (!discussionStart) {
-                        Sender.sendMessage("all::server::DS::話し合いを開始してください");
+                        sender.sendMessage("all::server::DS::話し合いを開始してください");
                         discussionStart = true;
                     }
-                    Sender.sendMessage("all::server::TM::" + (disPeriod - time));
+                    sender.sendMessage("all::server::TM::" + (disPeriod - time));
                 }
                 //投票時間が20秒
                 else if (time <= votePeriod) {
                     if (!votingStart) {
                         //投票要請
-                        Sender.sendMessage("all::server::VS::投票時刻になりました。投票する人を選択してください");
+                        sender.sendMessage("all::server::VS::投票時刻になりました。投票する人を選択してください");
                         votingStart = true;
                     }
-                    Sender.sendMessage("all::server::TM::" + (votePeriod - time));
+                    sender.sendMessage("all::server::TM::" + (votePeriod - time));
                 }
                 else{ //おわり
 
@@ -510,12 +521,12 @@ public class Server {
                             }
                             result = result.concat("】です");      //ですつきました
                         }
-                        Sender.sendMessage("all::server::RS::処刑される人は【" + result);
+                        sender.sendMessage("all::server::RS::処刑される人は【" + result);
 
                         boolean humanIsVictory = false;            //memo 村人側：負け
                         System.out.println("はじめ：村人側　負け"); ///////////////////////
 
-                        outside:for(Member m: members) {
+                        for(Member m: members) {
                             //誰も処刑せず人狼がいた場合
                             if(exes.isEmpty()) {
                                 humanIsVictory = true;
@@ -523,7 +534,7 @@ public class Server {
                                 if (m.getRole().equals("人狼")) {                 ///////////// getName()からgetRol()にしたよ
                                     humanIsVictory = false;                        ////memo 村人側：負け
                                     System.out.println("と、思いきや、村人側負けに決定");/////////////////
-                                    break outside;
+                                    break;
                                 }
                             }
                             else {//人狼を処刑できていた場合                  //memoだれかしら処刑　else {}の{} 好みでいれた
@@ -534,7 +545,7 @@ public class Server {
                                         System.out.println("村人側勝ちに決定　ver2");//////
                                         System.out.println(s + "は処刑");////////////////////
                                         System.out.println(m.getName() + "は人狼");///////////
-                                        break outside;
+                                        break;
                                     }
                                 }
                             }
@@ -552,7 +563,7 @@ public class Server {
                             nonPrayerResult="村人側の勝利です";
                         }
 
-                        Sender.sendMessage("all::server::ARS::"+nonPrayerResult);///////////全員に勝敗通知
+                        sender.sendMessage("all::server::ARS::"+nonPrayerResult);///////////全員に勝敗通知
                         for(Member m: members){
                             if (m.getRole().equals("人狼")) {        /////////////// getName() から getRol()　にしたよ
                                 result = wolfResult;
@@ -560,11 +571,11 @@ public class Server {
                                 result = humanResult;
                             }
                             //勝敗を送信
-                            Sender.sendMessage(m.getName()+"::server::RS::あなたは "+result);
+                            sender.sendMessage(m.getName()+"::server::RS::あなたは "+result);
 
                         }
                         for(Member m: members) {                                             ///////各役職の発表
-                            Sender.sendMessage("all::server::ARS::" + m.getName() + "の役職は :" + m.getRole()); ////////////////
+                            sender.sendMessage("all::server::ARS::" + m.getName() + "の役職は :" + m.getRole()); ////////////////
                         }                                                                   ////////////////////
 
                         resultsAnnounce = true;
@@ -576,8 +587,8 @@ public class Server {
                         //いろいろリセット////////////////////////////////////////
                         enterNum = 0;
                         members.clear();//////////////////////ゲームメンバー初期化
-                        //Sender.sendMessage("all::server::RG::もう一度ゲームに参加する場合は【再戦】を押してください。");
-                        Sender.sendMessage("all::server::RG::ゲームに参加する場合は【参戦】を押してください。");
+                        //sender.sendMessage("all::server::RG::もう一度ゲームに参加する場合は【再戦】を押してください。");
+                        sender.sendMessage("all::server::RG::ゲームに参加する場合は【参戦】を押してください。");
                         //占い師行動管理
                         ftActEnd = false; ///これぬけるとあかん
                         //怪盗行動管理

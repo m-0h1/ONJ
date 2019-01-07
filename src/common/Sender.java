@@ -8,7 +8,8 @@ import java.net.MulticastSocket;
 //メッセージを送るやつ
 public class Sender {
 
-    public static void sendMessage(String message) {
+    public void sendMessage(String message) {
+    //public static void sendMessage(String message) {
         MulticastSocket socket = null;
         InetAddress mcastAddress;
         try {
@@ -18,6 +19,7 @@ public class Sender {
             byte[] buf = message.getBytes(Config.ENCODING);
             DatagramPacket sendPacket = new DatagramPacket(buf, buf.length, mcastAddress, Config.MCAST_PORT);
             socket.send(sendPacket);
+            System.out.println("送信 >> " + message);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

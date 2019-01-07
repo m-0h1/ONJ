@@ -8,6 +8,8 @@ import javafx.collections.FXCollections;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 
+import java.net.DatagramPacket;
+
 //メッセージ受信用　thread的な奴
 /*
 import javafx.fxml.Initializable;
@@ -25,12 +27,15 @@ public class Controller {
     }
     */
 
+    private Sender sender;
+
     //最初に呼び出される。ここでリストのインスタンスを作るなど
     @FXML
     void initialize() {
         messageListView.setItems(messageList);  //listに追加されたものはlistViewへ自動的に反映される
         memberListView.setItems(memberList);
         attendanceListView.setItems(attendanceList);
+        sender = new Sender();
 
         //メッセージ受信用のスレッド的なもの開始 これは結局使わない
         //ss.start();
@@ -74,20 +79,20 @@ public class Controller {
     @FXML
     private ListView<String> attendanceListView;    //出席者（いる人）表示部
     //いる人リストの中身
-    private ObservableList<String> attendanceList = FXCollections.observableArrayList();    ;
+    private ObservableList<String> attendanceList = FXCollections.observableArrayList();
 
 
     //参戦ボタンクリック
     public void enterButtonClick(){    //ボタンの名前　gameButtonとかenterButtonとかにしたい
 
         if(isAttendGame){  //参加中　　　　やめる
-            Sender.sendMessage("all::" + myName + "::RGM::" + myName); //キャンセル連絡
+            sender.sendMessage("all::" + myName + "::RGM::" + myName); //キャンセル連絡
             isAttendGame=false;
             enterButton.setText("参戦");
             attendLeaveButton.setDisable(false);//退席できるようにする
         }else{             //参加してない　これからする
             //再戦希望を送る
-            Sender.sendMessage("all::" + myName + "::EN::"+myName);
+            sender.sendMessage("all::" + myName + "::EN::"+myName);
             //enterButton.setDisable(true);
             isAttendGame=true; //////////////////ゲーム参加中
             enterButton.setText("取消");
@@ -100,13 +105,17 @@ public class Controller {
     //メンバーリストで選択されたメンバーをselectMemberLabelに表示する
     public void memberSelected(){
         String member = memberListView.getSelectionModel().getSelectedItem();
-        selectMemberLabel.setText(member + " を選択する");
+        if(member != null) {
+            selectMemberLabel.setText(member + " を選択する");
+        }else{
+            selectMemberLabel.setText("選択した人表示");
+        }
     }
 
     //選択メンバー送信ボタンをクリックしたときに呼び出されるメソッド
     public void memberSendButtonClick(){
         //選択されたメンバーを送信
-        if(command == null){    //投票の時はcommand == VTです
+        if(command.equals("")){    //投票の時はcommand == VTです
             switch (myRole){
                 case "占い師":
                     command = "FM";
@@ -116,10 +125,10 @@ public class Controller {
                     break;
             }
         }
-        //Sender.sendMessage("server::" + myName + "::"+ command +"::" + selectMemberLabel.getText());
-        Sender.sendMessage("server::" + myName + "::"+ command +"::" + memberListView.getSelectionModel().getSelectedItem());
+        //sender.sendMessage("server::" + myName + "::"+ command +"::" + selectMemberLabel.getText());
+        sender.sendMessage("server::" + myName + "::"+ command +"::" + memberListView.getSelectionModel().getSelectedItem());
         memberSendButton.setDisable(true); //使えなくなる
-        command = null;
+        command = "";
         messageList.add("あなたは【"+ memberListView.getSelectionModel().getSelectedItem() + "】を選択しました");
     }
 
@@ -129,7 +138,7 @@ public class Controller {
         //データをマルチキャスト送信
         //コマンド付き！
         if(!sendMessage.equals("")) {   //空白はダメ～
-            Sender.sendMessage("all::" + myName + "::CM::" + sendMessage);
+            sender.sendMessage("all::" + myName + "::CM::" + sendMessage);
             messageTextArea.clear();
         }
     }
@@ -197,8 +206,8 @@ public class Controller {
                             enterButton.setDisable(true);
                             messageTextArea.setDisable(true);
                             messageSendButton.setDisable(true);
-                            roleLabel.setText("役職：" + "観戦者");
-
+                            myRole = "観戦者";
+                            roleLabel.setText("役職：" + myRole);
                         } //参戦できない
                         break;
                     //ゲーム開始
@@ -211,13 +220,18 @@ public class Controller {
 
                         } else {  ///////////////////////////ゲーム不参加　参戦ボタンoff
                             enterButton.setDisable(true);
-                            roleLabel.setText("役職：" + "観戦者");
+                            myRole = "観戦者";
+                            roleLabel.setText("役職：" + myRole);
                         }
                         //開始します
                         messageList.add(strings[3]);
                         //一時的にメッセージ送れません
                         messageTextArea.setDisable(true);
                         messageSendButton.setDisable(true);
+
+                        //コマンド初期化！！！！！！！！！
+                        command = "";
+
                         break;
 
                     //役職決定
@@ -313,6 +327,7 @@ public class Controller {
                         break;
                     //投票時刻になりました
                     case "VS":
+                        messageList.add(strings[3]);
                         if (isAttendGame) {            /////////////参加者だけ
                             /////////////////自分の名前を消す（使わない）/////////////////////////////////////////
                             //memberListView.getSelectionModel().clearSelection();
@@ -320,7 +335,6 @@ public class Controller {
                             //memberList.remove(myName);
                             //memberListView.getSelectionModel().selectFirst(); //デフォで先頭の人選択に
                             //////////////////////////////////////////////////////////////////////////////////
-                            messageList.add(strings[3]);
                             command = "VT";
                             memberSendButton.setDisable(false);
                             //一時的にメッセージ送れません
@@ -386,10 +400,11 @@ public class Controller {
     //自分のリスト上の位置
     private int myListIndex = 0;
     //ゲームに参加しているか？ ////////////////////////////////////////////
-    private boolean isAttendGame=false; ///////////////////////////////////
+    private boolean isAttendGame = false; ///////////////////////////////////
 
     @FXML
     private Button attendLeaveButton;   //参加or退席ボタン
+
 
     //参加or退席ボタンクリック
     public void attendLeaveButtonClick(){
@@ -398,7 +413,8 @@ public class Controller {
             //退席処理
             isAttend = false;
             //メンバーリストから名前を消す
-            Sender.sendMessage("all::" + myName + "::RCM::" + myName);
+            sender.sendMessage("all::" + myName + "::RCM::" + myName);
+            //System.out.println("送信 >>" + "all::" + myName + "::RCM::" + myName);
 
             //メッセージ送信できないようになる
             messageSendButton.setDisable(true);
@@ -434,7 +450,7 @@ public class Controller {
                 //出席処理
                 isAttend = true;
                 this.myName = name;
-                Sender.sendMessage("all::" + name + "::ACM::" + name);
+                sender.sendMessage("all::" + name + "::ACM::" + name);
 
                 //名前ラベルに名前表示！！！！//////////////////////////
                 nameLabel.setText("名前：" + myName);
